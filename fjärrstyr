@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+#===============================================================================
+#           FIL:  fjärrstyr
+#    ANVÄNDNING:  fjärrstyr [server]
+#     BEROENDEN:  ssh, netcat, realpath, (konsole)
+#
+#   BESKRIVNING:  Ansluter till en server via Secure Shell-protokollet.
+#
+#       SKAPARE:  Albin A. Henriksson (albin@ahenriksson.com)
+#       VERSION:  2020-07-03
+#===============================================================================
+
+# Hjälpfunktion.
+help() {
+    help_text=$(
+        cat <<EOF
+\e[1mAnvändning:\e[0m
+  \e[1mfjärrstyr [server]\e[0m
+  kommer att ansluta användaren till servern "[server]".
+
+  \e[1mfjärrstyr -l\e[0m
+  skriver ut en lista på sparade anslutningar.
+
+  \e[1mfjärrstyr -h\e[0m
+  visar det här hjälpfönstret.
+
+\e[1mBeroenden:\e[0m
+  ssh, netcat, (konsole).
+
+\e[1mBeskrivning:\e[0m
+  Programmet ansluter användaren till en vald server m.h.a. Secure Shell-
+  protokollet (SSH). Vid anslutning byts även färgtemat i användarens terminal
+  ut för att göra det lättare att se skillnad på terminalfönster.
+
+  Om terminalemulatorn Konsole används ändras färgemat till "SSH" vid anslutning
+  och återställs till "Breeze" vid slutföring.
+
+\e[1mKonfiguration:\e[0m
+  Programmet letar efter sparade anslutningar i filen "\$HOME/.fjärrstyr".
+
+  Filen ska följa följande mönster:
+  NAMN ANVÄNDARE SERVERADRESS
+
+  Exempel:
+  jobb_server ulf mittjobb.se
+  botnet4 root 84.221.147.159
+  speldator cspro91 192.168.1.42
+  \n
+EOF
+    )
+    printf '%b\n' "$help_text"
+}
+
+# Lista lagrade konfigurationer i $HOME/.fjärrstyr.
+lista_servrar() {
+    if [ ! -e "$HOME/.fjärrstyr" ]; then
+        printf 'Ingen konfigurationsfil hittad. Se "fjärrstyr -h" för hjälp.\n'
+        exit 2
+    fi
+    while read -r uppkoppling_id uppkoppling_anvandare uppkoppling_serveradress; do
+        printf '\e[1m%s\e[0m\nAnvändare: %s\nAdress: %s\n\n' \
+            "$uppkoppling_id" "$uppkoppling_anvandare" "$uppkoppling_serveradress" |
+            expand -t 4
+    done <"$HOME/.fjärrstyr"
+}
+
+# Undersök om maskinen bakom vald IP-adress svarar på anrop.
+kontrollera_server() {
+    printf '\n\e[1mKontrollerar att servern %s svarar på anrop på port 22 (TCP).\e[0m\n' \
+        "$uppkoppling_serveradress"
+    if netcat -z "$uppkoppling_serveradress" 22 2>/dev/null; then
+        printf 'Resultatet var lyckat. %s tillåter fjärrstyrning.\n' \
+            "$uppkoppling_serveradress"
+        kontroll_lyckad=true
+    else
+        printf 'Resultatet var misslyckat. %s tillåter inte fjärrstyrning.\n' \
+            "$uppkoppling_serveradress"
+        printf 'Vill du pröva att ansluta ändå? (Y/n):'
+        read -r
+        case "$REPLY" in
+        n* | N*) exit 0 ;;
+        esac
+    fi
+}
+
+# Starta fjärrstyrning via SSH.
+anslut_ssh() {
+    kontrollera_server
+    printf '\n\e[1mAnsluter till %s via SSH på port 22 (TCP).\e[0m\n' \
+        "$uppkoppling_string"
+    if [ -n "$KONSOLE_VERSION" ] && [ "$kontroll_lyckad" = true ]; then # Om Konsole används, byt färtema.
+        konsoleprofile colors=SSH
+    fi
+    { # try
+        ssh "$uppkoppling_string"
+    } || { # catch
+        printf 'Anslutning misslyckades!\n' &&
+            exit 1
+    }
+    if [ -n "$KONSOLE_VERSION" ]; then # Om Konsole används, återställ färtema.
+        konsoleprofile colors=Breeze
+    fi
+    printf '\e[1mFjärrsyrning Avslutad.\e[0m\n\n'
+}
+
+# Mata in anslutningsuppgifter, kontrollera sedan och anlut till server.
+manuell_anslutning() {
+    printf '\e[1mServer ej vald. Se "fjärrstyr -l" för sparade anslutningar.\e[0m\n'
+    printf 'Användarnamn:'
+    read -r uppkoppling_anvandare
+    printf 'Serveradress:'
+    read -r uppkoppling_serveradress
+    uppkoppling_string="${uppkoppling_anvandare}@${uppkoppling_serveradress}"
+    anslut_ssh
+    exit 0
+}
+
+# Undersöker om vald server har en fördefinierad konfiguration, om så - anslut.
+automatisk_anslutning() {
+    if [ ! -e "$HOME/.fjärrstyr" ]; then
+        printf 'Ingen konfigurationsfil hittad. Se "fjärrstyr -h" för hjälp.\n'
+        exit 2
+    else
+        printf '\e[1mSöker efter sparade anslutningar med namnet "%s".\e[0m\n' "$1"
+        while read -r sparad_id sparad_anvandare sparad_serveradress; do
+            if [ "$1" == "$sparad_id" ]; then
+                anslutning_hittad=true
+                printf 'Anslutning hittad.\n'
+                uppkoppling_anvandare="$sparad_anvandare"
+                uppkoppling_serveradress="$sparad_serveradress"
+                uppkoppling_string="${uppkoppling_anvandare}@${uppkoppling_serveradress}"
+            fi
+        done <"$HOME/.fjärrstyr"
+        if [ "$anslutning_hittad" == true ]; then
+            anslut_ssh
+        else
+            printf 'Hittade ingen sparad konfiguration för "%s"\n\n' "$1"
+            exit 1
+        fi
+    fi
+    exit 0
+}
+
+# Hjälp och riskhantering.
+if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "--help" ]; then
+    help
+    exit 0
+elif [ "$1" == "-l" ] || [ "$1" == "-list" ] || [ "$1" == "--list" ]; then
+    lista_servrar
+    exit 0
+elif [ -z "$1" ]; then
+    manuell_anslutning
+    exit 0
+elif [ -n "$2" ]; then
+    printf 'För många hargument har tillhandahållits. Pröva "fjärrstyr -h".\n'
+    exit 2
+else
+    automatisk_anslutning "$@"
+fi
+
+exit 0

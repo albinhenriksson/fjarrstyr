@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+#===============================================================================
+#           FIL:  _fjärrstyr
+#    ANVÄNDNING:  fjärrstyr [TAB]
+#     BEROENDEN:  fjärrstyr
+#
+#   BESKRIVNING:  Bash-komplettering till programmet "fjärrstyr".
+#
+#       SKAPARE:  Albin A. Henriksson (albin@ahenriksson.com)
+#       VERSION:  2020-07-03
+#===============================================================================
+
+_fjarrstyr_completion() {
+    if [ "${#COMP_WORDS[@]}" != "2" ]; then
+        return
+    fi
+
+    local sparare_anslutningar=
+    if [ -e "$HOME/.fjärrstyr" ]; then
+        while read -r sparad_id sparad_anvandare sparad_serveradress; do
+            local sparare_anslutningar="$sparare_anslutningar $sparad_id"
+        done <"$HOME/.fjärrstyr"
+    fi
+    mapfile -t COMPREPLY < <(compgen -W "--help --list ${sparare_anslutningar}" \
+        -- "${COMP_WORDS[1]}")
+}
+complete -o default -F _fjarrstyr_completion fjärrstyr
