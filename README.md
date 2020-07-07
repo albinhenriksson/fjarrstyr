@@ -1,18 +1,17 @@
 ![](fjärrstyr.gif)
 
 ---
-
 - [1. Syfte](#1-syfte)
 - [2. Funktioner](#2-funktioner)
 - [3. Installation](#3-installation)
-  - [3.1. Beroenden](#31-beroenden)
-  - [3.2. Lokal installation](#32-lokal-installation)
-  - [3.3. Global installation](#33-global-installation)
+  - [3.1. Windows](#31-windows)
+  - [3.2. MacOS och Linux](#32-macos-och-linux)
+    - [3.2.1. Beroenden](#321-beroenden)
+    - [3.2.2. Vanlig installation](#322-vanlig-installation)
 - [4. Användning](#4-användning)
 - [5. Referens](#5-referens)
 
 ## 1. Syfte
-
 __Vad är poängen med det här programmet?__
 
 Programmet gör det något bekvämare att använda fjärranslutningar till andra datorer och servrar via SSH-protokollet`*` - dels genom att spara favoritanslutningar och dels genom att skifta färgtema på terminalfönstret. Färgskiftet gör det snabbt och enkelt att se vilka terminaler som är lokala och vilka som inte är det (vilket enligt en kompis kan minska risken att man göra dumma misstag).
@@ -20,7 +19,6 @@ Programmet gör det något bekvämare att använda fjärranslutningar till andra
 >`*`SSH (Secure Shell) är ett protokoll som används för att säkert  och krypterat ansluta sig mot andra datorer över ett nätverk (både Internet och lokala sådana). SSH består av en serverdel, som vanligtvis lyssnar på port 22, och en klientdel. Den vanligaste implementationen är OpenSSH.
 
 ## 2. Funktioner
-
 + Alla talar svenska!
 + Lagra favorit-servrars anslutningsuppgifter.
 + Skiftar färg på terminalfönster vid anslutning. Återställer vid avslutning.
@@ -28,55 +26,27 @@ Programmet gör det något bekvämare att använda fjärranslutningar till andra
 + ~~hashcat-integrering.~~
 + Bash-komplettering, d.v.s. automatisk ifyllning när man dubbelklickar på [TAB]-tangenten.
 
-
-
 ## 3. Installation
-
-För att installera programmet krävs bara att du först ändrar dess rättigheter till körbar och sedan placerar den i en mapp som ligger i din __$PATH-variabel__`*`.
+För att installera programmet i **Linux** och **MacOS** ger du bara programmet kör-rättigheter och kopierar det till en mapp som ligger i din __$PATH-variabel__`*` (t.ex. `"/usr/bin/"`), men i **Windows** måste du först aktivera Microsofts fräsiga **WSL** (Windows Subsystem for Linux).
 
 >`*`$PATH-variabeln berättar för skalet (i det här fallet Bash) vilka mappar som datorns program ligger i. Alla mappar som är definierade i $PATH laddas liksom alltid som en stor bonusmapp efter att mappen som du faktiskt är i har laddats så att programmen som ligger däri alltid är nåbara utan att definiera deras fulla sökväg.
 
-### 3.1. Beroenden
+### 3.1. Windows
+1. Följ först Microsofts officiella guide för att installera WSL ([Windows Subsystem for Linux Installation Guide for Windows 10](https://docs.microsoft.com/en-us/windows/wsl/install-win10)).
+2. När WSL är aktiverat och du har valt en distribution från Microsoft Store (t.ex. [Ubuntu 20.04 LTS](https://www.microsoft.com/sv-se/p/ubuntu-2004-lts/9n6svws3rx71?rtc=1&activetab=pivot:overviewtab)) följer du samma instruktioner som för MacOS och Linux nedan.
 
-För att allt ska funka måste du ha följande program installerade.
+### 3.2. MacOS och Linux
+#### 3.2.1. Beroenden
+<span style="color:red">För att allt ska funka måste du ha följande program installerade!</span>
+
 + **ssh**
 + **netcat**
-+ **konsole** - Bara om du vill ha skifte av färg vid anslutning.
++ konsole`*`
 
+>`*`Programmet funkar finfint i andra terminalemulatorer, men saknar då möjlighet att skifta färg.
 
-### 3.2. Lokal installation
-
-Följande kommandon installerar programmet för en specifik användare.
-
-``` bash
-# Se till att $HOME/bin ligger i $PATH.
-echo $PATH
-
-# Om du inte ser $HOME/bin måste du lägga till den genom att redigera $HOME/.bashrc.
-nano $HOME/.bashrc
-
-# Klistra nu in följande längst ned i filen:
-export PATH="$HOME/bin:$PATH"
-
-# Ladda ned programmet!
-git clone https://github.com/albinhenriksson/fjarrstyr
-cd fjarrstyr
-
-# Gör programmet körbart.
-chmod +x fjärrstyr
-
-# Kopiera till program-mappen.
-cp fjärrstyr $HOME/bin/
-```
-
-Klart! Om du också vill ha autoifyllnad när du klickar på [TAB] så behöver du bara skriva följande kommando.
-``` bash
-echo "source \"$(realpath _fjärrstyr)\"" >> ~/.bashrc
-```
-
-### 3.3. Global installation
-
-Om du vill att programmet ska vara tillgängligt för alla användare på systemet, inklusive root-användaren gör du följande.
+#### 3.2.2. Vanlig installation
+För att installera programmet för alla användare, öppna en terminal och skriv in följande.
 
 ``` bash
 # Ladda ned programmet!
@@ -86,18 +56,14 @@ cd fjarrstyr
 # Gör programmet körbart.
 chmod +x fjärrstyr
 
-# Kopiera till program-mappen.
-cp fjärrstyr /usr/bin/
-```
+# Installera i program-mappen.
+sudo ln -s "$(realpath fjärrstyr)" /usr/bin/
 
-Klart! Om du också vill ha autoifyllnad när du klickar på [TAB] så behöver du bara skriva följande kommando.
-``` bash
+# Slutligen, aktivera programmets komplettering.
 echo "source \"$(realpath _fjarrstyr)\"" | sudo tee --append /etc/profile
 ```
 
-
 ## 4. Användning
-
 ``` bash
 $ fjärrstyr --help
 
@@ -134,7 +100,9 @@ botnet4 root 84.221.147.159
 speldator cspro91 192.168.1.42
 ```
 
-
 ## 5. Referens
 + [SSH (Secure Shell)](https://sv.wikipedia.org/wiki/Secure_Shell)
-+ [Bash-komplettering](https://www.gnu.org/software/bash/manual/bash.html#Programmable-Completion)
++ [Bash Programmable Completion](https://www.gnu.org/software/bash/manual/bash.html#Programmable-Completion)
++ [PATH Definition](http://www.linfo.org/path_env_var.html)
++ [The Environment Variable TERM](https://www.gnu.org/software/gettext/manual/html_node/The-TERM-variable.html)
++ [Windows Subsystem for Linux Installation Guide for Windows 10](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
