@@ -60,7 +60,7 @@ chmod +x fjärrstyr
 sudo ln -s "$(realpath fjärrstyr)" /usr/bin/
 
 # Slutligen, aktivera programmets komplettering.
-echo "source \"$(realpath _fjarrstyr)\"" | sudo tee --append /etc/profile
+echo "source \"$(realpath _fjärrstyr)\"" | sudo tee --append /etc/profile
 ```
 
 ## 4. Användning
